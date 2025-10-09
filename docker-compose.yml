@@ -1,0 +1,169 @@
+version: "3.9"
+
+services:
+  # 1. VON 네트워크 (원장/웹 UI)
+  von-network:
+    build:
+      context: ./von-network
+    container_name: isbomb-von-network
+    platform: linux/amd64
+    ports:
+      - "9700:8000"   # Ledger Browser UI
+    environment:
+      - DOCKERHOST=host.docker.internal
+    command: >
+      /bin/bash -c "./scripts/start_webserver.sh && sleep infinity"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 2. Developer Agent
+  developer-agent:
+    build:
+      context: ./acapy
+      dockerfile: ./docker/Dockerfile
+    container_name: developer-agent
+    platform: linux/amd64
+    ports:
+      - "9080:8080"
+      - "9081:8081"
+    depends_on:
+      von-network:
+        condition: service_healthy
+    command:
+      - "start"
+      - "-it"
+      - "http"
+      - "0.0.0.0"
+      - "8080"
+      - "-ot"
+      - "http"
+      - "--endpoint"
+      - "http://host.docker.internal:9080"
+      - "--admin"
+      - "0.0.0.0"
+      - "8081"
+      - "--admin-insecure-mode"
+      - "--genesis-url"
+      - "http://von-network:8000/genesis"
+      - "--wallet-type"
+      - "askar"
+      - "--wallet-name"
+      - "developer_wallet"
+      - "--wallet-key"
+      - "developer_key"
+      - "--auto-provision"
+      - "--auto-accept-invites"
+      - "--auto-accept-requests"
+      - "--auto-ping-connection"
+      - "--webhook-url"
+      - "http://backend:8000/api/webhooks/developer"
+
+  # 3. Regulator Agent
+  regulator-agent:
+    build:
+      context: ./acapy
+      dockerfile: ./docker/Dockerfile
+    container_name: regulator-agent
+    platform: linux/amd64
+    ports:
+      - "9180:8080"
+      - "9181:8081"
+    depends_on:
+      von-network:
+        condition: service_healthy
+    command:
+      - "start"
+      - "-it"
+      - "http"
+      - "0.0.0.0"
+      - "8080"
+      - "-ot"
+      - "http"
+      - "--endpoint"
+      - "http://host.docker.internal:9180"
+      - "--admin"
+      - "0.0.0.0"
+      - "8081"
+      - "--admin-insecure-mode"
+      - "--genesis-url"
+      - "http://von-network:8000/genesis"
+      - "--wallet-type"
+      - "askar"
+      - "--wallet-name"
+      - "regulator_wallet"
+      - "--wallet-key"
+      - "regulator_key"
+      - "--auto-provision"
+      - "--auto-accept-invites"
+      - "--auto-accept-requests"
+      - "--auto-ping-connection"
+      - "--webhook-url"
+      - "http://backend:8000/api/webhooks/regulator"
+
+  # 4. Supervisor Agent
+  supervisor-agent:
+    build:
+      context: ./acapy
+      dockerfile: ./docker/Dockerfile
+    container_name: supervisor-agent
+    platform: linux/amd64
+    ports:
+      - "9280:8080"
+      - "9281:8081"
+    depends_on:
+      von-network:
+        condition: service_healthy
+    command:
+      - "start"
+      - "-it"
+      - "http"
+      - "0.0.0.0"
+      - "8080"
+      - "-ot"
+      - "http"
+      - "--endpoint"
+      - "http://host.docker.internal:9280"
+      - "--admin"
+      - "0.0.0.0"
+      - "8081"
+      - "--admin-insecure-mode"
+      - "--genesis-url"
+      - "http://von-network:8000/genesis"
+      - "--wallet-type"
+      - "askar"
+      - "--wallet-name"
+      - "supervisor_wallet"
+      - "--wallet-key"
+      - "supervisor_key"
+      - "--auto-provision"
+      - "--auto-accept-invites"
+      - "--auto-accept-requests"
+      - "--auto-ping-connection"
+      - "--webhook-url"
+      - "http://backend:8000/api/webhooks/supervisor"
+
+  # 5. Backend Controller (FastAPI)
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    depends_on:
+      - developer-agent
+      - regulator-agent
+      - supervisor-agent
+    environment:
+      - DEVELOPER_AGENT_URL=http://developer-agent:8081
+      - REGULATOR_AGENT_URL=http://regulator-agent:8081
+      - SUPERVISOR_AGENT_URL=http://supervisor-agent:8081
+      # 기본 fallback (안 쓰게 될 예정)
+      - ACAPY_ADMIN_URL=http://developer-agent:8081
+
+networks:
+  default:

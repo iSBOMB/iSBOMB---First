@@ -1,0 +1,35 @@
+# Mac / system
+.DS_Store
+
+# Node & frontend
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python / backend
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Blockchain / Hardhat
+artifacts/
+cache/
+coverage/
+typechain/
+.env
+
+# Docker & Ledger
+von-network/
+acapy/
+
+# Logs & tmp
+*.log
+debug.txt
+done
+*.json
