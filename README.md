@@ -71,7 +71,7 @@ iSBOMB 프레임워크는 논리적으로 분리된 3개 계층으로 구성됩�
 
 
 
-## 🛠️ Tech Skills 
+## 🛠️ 기술 스택 
 | Category | Stack |
 | :--- | :--- |
 | **Blockchain** | ![Solidity](https://img.shields.io/badge/Solidity-363636?style=flat-square&logo=solidity&logoColor=white) ![Polygon](https://img.shields.io/badge/Polygon-8247E5?style=flat-square&logo=polygon&logoColor=white) ![Hardhat](https://img.shields.io/badge/Hardhat-FFF100?style=flat-square&logo=hardhat&logoColor=black) |
